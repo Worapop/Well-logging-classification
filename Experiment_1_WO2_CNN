@@ -73,9 +73,9 @@ def extend_data(input_data):
 
 
 #import data#
-fold_1_train = np.loadtxt('D:/01_Academic_Chula/Python_task/5-fold_data/WO2_fold_1_train.csv', delimiter=',')
-fold_1_test  = np.loadtxt('D:/01_Academic_Chula/Python_task/5-fold_data/WO2_fold_1_test.csv', delimiter=',')
-fold_1_vali  = np.loadtxt('D:/01_Academic_Chula/Python_task/5-fold_data/WO2_fold_1_vali.csv', delimiter=',')
+fold_1_train = np.loadtxt('...../WO2_fold_1_train.csv', delimiter=',')
+fold_1_test  = np.loadtxt('...../WO2_fold_1_test.csv', delimiter=',')
+fold_1_vali  = np.loadtxt('...../WO2_fold_1_vali.csv', delimiter=',')
 
 from sklearn import preprocessing
 from sklearn.preprocessing import LabelBinarizer
