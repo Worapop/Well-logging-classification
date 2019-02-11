@@ -13,7 +13,7 @@ from sklearn.cross_validation import train_test_split
 ## import Data##
 WO2_fold_1_train = np.loadtxt('...../WO2_fold_1_train.csv', delimiter=',')
 WO2_fold_1_test  = np.loadtxt('...../WO2_fold_1_test.csv', delimiter=',')
-WO2_fold_1_vali  = np.loadtxt('..../WO2_fold_1_vali.csv', delimiter=',')
+WO2_fold_1_vali  = np.loadtxt('...../WO2_fold_1_vali.csv', delimiter=',')
 
 train_data = WO2_fold_1_train[:,1:5]
 train_label= WO2_fold_1_train[:,5:]
