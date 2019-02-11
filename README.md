@@ -6,7 +6,7 @@ Well logging classification using machine learning models
 # Class 0: Basalt
 # Class 1: Claystone
 # Class 2: Conglomerate
-# Class 0: Sandstone
-# Class 0: Siltstone
-# Class 0: Tuff
-# Class 0: Vitrophyre
+# Class 3: Sandstone
+# Class 4: Siltstone
+# Class 5: Tuff
+# Class 6: Vitrophyre
