@@ -1,0 +1,77 @@
+from keras.models import Sequential
+from keras.layers import LSTM, Dense, RNN, GRU, SimpleRNN
+from keras.layers import Dense, Dropout, Activation 
+from keras import optimizers
+import pandas as pd
+
+from sklearn.cross_validation import train_test_split
+
+import numpy as np
+import tensorflow as tf
+
+
+from sklearn import preprocessing
+from sklearn.preprocessing import LabelBinarizer
+lb = preprocessing.LabelBinarizer()
+lb.fit([0, 1, 2, 3, 4, 5, 6])
+LabelBinarizer(neg_label=0, pos_label=1, sparse_output=False)
+lb.classes_
+
+
+#import data#
+WO2_fold_1_train = np.loadtxt('...../WO2_fold_1_train.csv', delimiter=',')
+WO2_fold_1_test  = np.loadtxt('...../WO2_fold_1_test.csv', delimiter=',')
+WO2_fold_1_vali  = np.loadtxt('...../WO2_fold_1_vali.csv', delimiter=',')
+
+train_data = WO2_fold_1_train[:,1:5]
+train_label= lb.transform(WO2_fold_1_train[:,5])
+test_data  = WO2_fold_1_test[:,1:5]
+test_label = lb.transform(WO2_fold_1_test[:,5])
+vali_data  = WO2_fold_1_vali[:,1:5]
+vali_label = lb.transform(WO2_fold_1_vali[:,5])
+
+
+
+# train model#
+learn_rate = []
+num_node = []
+num_drop_out = []
+model_eval = []
+train_acc=[]
+train_loss=[]
+vali_loss=[]
+vali_acc=[]
+vali_acc_2=[]
+for lr in [0.00001, 0.0001, 0.001, 0.01]:
+    for drop_out in [0.05,0.1,0.15,0.2,0.25]:
+        for node in [64,32,16,8]:
+            model = Sequential()
+            model.add(Dense(node, input_shape=(4,)))
+            model.add(Dropout(drop_out))
+            model.add(Dense(node, activation='relu'))
+            model.add(Dropout(drop_out))
+            model.add(Dense(7, activation='softmax'))
+                
+            SGD = optimizers.SGD(lr=lr)
+            model.compile(loss='categorical_crossentropy',
+                            optimizer=SGD,
+                            metrics=['accuracy'])
+            
+            model_fit=model.fit(train_data, train_label,
+                                  epochs=5, batch_size=64,
+                                  validation_data = (vali_data,vali_label))
+            
+            acc = model_fit.history['val_acc']
+            
+            model_eval.append(model.evaluate(test_data,test_label))
+            learn_rate.append(lr)
+            num_drop_out.append(drop_out)
+            num_node.append(node)
+            vali_acc_2.append(acc[4])
+            
+
+# export #
+model_eval = np.asarray(model_eval)
+ANN_WO2_para = np.vstack([learn_rate,num_drop_out,num_node,vali_acc_2,model_eval[:,1]])
+ANN_WO2_para = pd.DataFrame(ANN_WO2_para.T)
+ANN_WO2_para.to_csv('...../WO2_ANN_fold_1.csv', index=False, header=False)
