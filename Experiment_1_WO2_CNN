@@ -1,0 +1,137 @@
+from keras.models import Sequential
+from keras.layers import Dense, Conv1D, MaxPooling1D, Dropout, Flatten, Activation, UpSampling1D
+from keras.layers import LSTM, Dense, RNN, GRU, SimpleRNN
+from keras import optimizers
+import numpy as np
+import pandas as pd
+from sklearn.cross_validation import train_test_split
+
+# prepare data#
+def data_to_CNN(train_x):
+    x_axis = np.size(train_x,0)
+    y_axis = np.size(train_x,1)
+    data = np.zeros((x_axis-30,31,y_axis))
+    for x in range(15,x_axis-15):
+        for z in range(0,y_axis):
+            data[x-15,0,z]  = train_x[x-15,z]
+            data[x-15,1,z]  = train_x[x-14,z]
+            data[x-15,2,z]  = train_x[x-13,z]
+            data[x-15,3,z]  = train_x[x-12,z]
+            data[x-15,4,z]  = train_x[x-11,z]
+            data[x-15,5,z]  = train_x[x-10,z]
+            data[x-15,6,z]  = train_x[x-9 ,z]
+            data[x-15,7,z]  = train_x[x-8 ,z]
+            data[x-15,8,z]  = train_x[x-7 ,z]
+            data[x-15,9,z]  = train_x[x-6 ,z]
+            data[x-15,10,z] = train_x[x-5 ,z]
+            data[x-15,11,z] = train_x[x-4 ,z]
+            data[x-15,12,z] = train_x[x-3 ,z]
+            data[x-15,13,z] = train_x[x-2 ,z]
+            data[x-15,14,z] = train_x[x-1 ,z]
+            data[x-15,15,z] = train_x[x,z]
+            data[x-15,16,z] = train_x[x+1 ,z]
+            data[x-15,17,z] = train_x[x+2 ,z]
+            data[x-15,18,z] = train_x[x+3 ,z]
+            data[x-15,19,z] = train_x[x+4 ,z]
+            data[x-15,20,z] = train_x[x+5 ,z]
+            data[x-15,21,z] = train_x[x+6 ,z]
+            data[x-15,22,z] = train_x[x+7 ,z]
+            data[x-15,23,z] = train_x[x+8 ,z]
+            data[x-15,24,z] = train_x[x+9 ,z]
+            data[x-15,25,z] = train_x[x+10,z]
+            data[x-15,26,z] = train_x[x+11,z]
+            data[x-15,27,z] = train_x[x+12,z]
+            data[x-15,28,z] = train_x[x+13,z]
+            data[x-15,29,z] = train_x[x+14,z]
+            data[x-15,30,z] = train_x[x+15,z]
+    return data
+    
+# prepare data 2#
+def extend_data(input_data):
+    y_axis = np.size(input_data,1)
+    data = input_data[0,:]
+    data_CNN = np.zeros((1,31,y_axis))
+    for k in range(14):
+        data = np.vstack((data,input_data[0,:]))
+    for i in range(0,np.size(input_data,0)-1):
+        if input_data[i+1,0]-input_data[i,0] >= 1:
+            data = np.vstack((data,input_data[i,:]))
+            for j in range(15):
+                data = np.vstack((data,input_data[i,:]))
+            data_CNN = np.vstack((data_CNN,data_to_CNN(data)))    
+        
+            data = input_data[i+1,:]
+            for j in range(14):
+                data = np.vstack((data,input_data[i+1,:]))
+        else:
+            data = np.vstack((data,input_data[i,:]))
+            
+    for k in range(16):
+        data = np.vstack((data,input_data[i+1,:]))
+    data_CNN = np.vstack((data_CNN,data_to_CNN(data)))
+    return data_CNN[1:,:]
+
+
+#import data#
+fold_1_train = np.loadtxt('D:/01_Academic_Chula/Python_task/5-fold_data/WO2_fold_1_train.csv', delimiter=',')
+fold_1_test  = np.loadtxt('D:/01_Academic_Chula/Python_task/5-fold_data/WO2_fold_1_test.csv', delimiter=',')
+fold_1_vali  = np.loadtxt('D:/01_Academic_Chula/Python_task/5-fold_data/WO2_fold_1_vali.csv', delimiter=',')
+
+from sklearn import preprocessing
+from sklearn.preprocessing import LabelBinarizer
+lb = preprocessing.LabelBinarizer()
+lb.fit([0, 1, 2, 3, 4, 5, 6])
+LabelBinarizer(neg_label=0, pos_label=1, sparse_output=False)
+lb.classes_
+
+
+train_data = extend_data(fold_1_train[:,1:5])
+train_label= lb.transform(fold_1_train[:,5])
+
+test_data = extend_data(fold_1_test[:,1:5])
+test_label= lb.transform(fold_1_test[:,5])
+
+vali_data = extend_data(fold_1_vali[:,1:5])
+vali_label= lb.transform(fold_1_vali[:,5])
+
+
+learn_rate = []
+num_filter = []
+num_drop_out = []
+model_eval = []
+vali_acc = []
+vali_acc_2 = []
+for lr in [0.00001, 0.0001, 0.001, 0.01]:
+    for drop_out in [0.05,0.1,0.15,0.2,0.25]:
+        for filters in [64,32,16,8]:
+            model = Sequential()
+            model.add(Conv1D(kernel_size=3, filters=filters, input_shape=(31, 4)))
+            model.add(MaxPooling1D(pool_size=2, strides=None, padding='valid'))
+            model.add(Conv1D(kernel_size=5, filters=filters*2))
+            model.add(Flatten())
+            model.add(Dropout(drop_out))
+            model.add(Dense(7, activation='softmax'))
+            
+            SGD = optimizers.SGD(lr=lr)
+            model.compile(loss='categorical_crossentropy',
+                          optimizer=SGD,
+                          metrics=['accuracy'])
+            
+            model_fit = model.fit(train_data, train_label,
+                                  batch_size=64, epochs=5,
+                                  validation_data = (vali_data,vali_label))
+            acc = model_fit.history['val_acc']
+            vali_acc.append(model_fit.history['val_acc'])
+            
+            model_eval.append(model.evaluate(test_data,test_label))
+            learn_rate.append(lr)
+            num_drop_out.append(drop_out)
+            num_filter.append(filters)
+            vali_acc_2.append(acc[4])
+          
+          
+#export data#
+model_eval = np.asarray(model_eval)
+CNN_WO2_para = np.vstack([learn_rate,num_drop_out,num_filter,vali_acc_2,model_eval[:,1]])
+CNN_WO2_para = pd.DataFrame(CNN_WO2_para.T)
+CNN_WO2_para.to_csv('...../WO2_CNN_fold_1.csv', index=False, header=False)
