@@ -1,0 +1,92 @@
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import numpy
+
+import xgboost as xgb
+import tensorflow as tf
+
+from sklearn.svm import SVC
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.cross_validation import train_test_split
+
+## import Data##
+WO2_fold_1_train = np.loadtxt('...../WO2_fold_1_train.csv', delimiter=',')
+WO2_fold_1_test  = np.loadtxt('...../WO2_fold_1_test.csv', delimiter=',')
+WO2_fold_1_vali  = np.loadtxt('..../WO2_fold_1_vali.csv', delimiter=',')
+
+train_data = WO2_fold_1_train[:,1:5]
+train_label= WO2_fold_1_train[:,5:]
+test_data = WO2_fold_1_test[:,1:5]
+test_label= WO2_fold_1_test[:,5:]
+vali_data = WO2_fold_1_vali[:,1:5]
+vali_label= WO2_fold_1_vali[:,5:]
+
+## Support Vector Machine ##
+
+#Valiable that collect the model parameter
+SVM_C= []            #Collect C of SVM
+SVM_gamma = []       #Collect gamma of SVM
+SVM_acc_vali = []    #Collect validation set result
+SVM_acc_test = []    #Collect test set result
+
+#for-loop to loop model for collect parameter
+#Beware that it take a long time to finish all loop, so may be you should run in 1 time for demonstration
+for C in [0.1,1,10,100,1000]:
+    for gamma in [0.00001,0.0001,0.001,0.01]:
+        clf = SVC(C= C, gamma= gamma)             #Set-up model parameter C = 0.1,1,10,100,1000 and gamma = 0.00001,0.0001,0.001,0.01 
+        clf.fit(train_data,train_label.ravel())   #train model on training data set
+        SVM_C.append(C)                           #Collect C value into Variable named SVM_C 
+        SVM_gamma.append(gamma)                   #Collect gamma value into Variable named SVM_gamma
+        SVM_acc_vali.append(clf.score(vali_data,vali_label.ravel())) #Test model on validation data set and collect result
+        SVM_acc_test.append(clf.score(test_data,test_label.ravel()))     #Test model on test data set and collect result
+
+        
+#Export C, gamma, validation_result, and test_result to excel
+SVM_para = np.vstack([SVM_C,SVM_gamma,SVM_acc_vali,SVM_acc_test])
+SVM = pd.DataFrame(SVM_para)
+SVM = SVM.transpose()
+SVM.to_csv('WO2_SVM_fold_1.csv', index=False, header=False) #File_name=WO2.csv
+
+
+## K-nearest neighbour ##
+KNN_K = []
+KNN_vali = []
+KNN_test = []
+for K in range(1,11):
+    knn_clas = KNeighborsClassifier(n_neighbors= K)
+    knn_clas.fit(train_data,train_label.ravel())
+    KNN_K.append(K)
+    KNN_vali.append(knn_clas.score(vali_data, vali_label.ravel(), sample_weight=None))
+    KNN_test.append(knn_clas.score(test_data, test_label.ravel(), sample_weight=None))
+
+#Export
+KNN_para = np.vstack([KNN_K,KNN_vali,KNN_test])
+KNN = pd.DataFrame(KNN_para)
+KNN = KNN.transpose()
+KNN.to_csv('WO2_KNN_fold_1.csv', index=False, header=False) #File_name=WO2.csv
+
+
+## xgboost ##
+xg_eta=[]
+xg_min_c=[]
+xg_max_d=[]
+xg_vali=[]
+xg_test=[]
+for eta in [0.01,0.04,0.07,0.1,0.2,0.3]:
+    for min_child_weight in [0.1,1,10,100]:
+        for max_depth in [3,4,5,6,7,8,9,10]:
+            xgb_clas = xgb.XGBClassifier(learning_rate=eta,min_child_weight=min_child_weight,max_depth=max_depth)
+            xgb_clas.fit(train_data, train_label)
+            xg_eta.append(eta)
+            xg_min_c.append(min_child_weight)
+            xg_max_d.append(max_depth)
+            xg_vali.append(xgb_clas.score(vali_data, vali_label.ravel(), sample_weight=None))
+            xg_test.append(xgb_clas.score(test_data, test_label.ravel(), sample_weight=None))
+
+#Export
+xg_para = np.vstack([xg_eta,xg_min_c,xg_max_d,xg_vali,xg_test])
+Xgb = pd.DataFrame(xg_para)
+Xgb = Xgb.transpose()
+Xgb.to_csv('WO2_XGB_fold_1.csv', index=False, header=False) #File_name=WO2.csv
+
